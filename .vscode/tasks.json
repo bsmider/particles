@@ -1,0 +1,44 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "type": "shell",
+            "label": "g++.exe build active file",
+            "command": "C:\\Program Files\\mingw-w64\\x86_64-8.1.0-posix-seh-rt_v6-rev0\\mingw64\\bin\\g++.exe",
+            "args": [
+                "-g",
+
+                // include paths
+                "-I${workspaceFolder}",
+                "-I${workspaceFolder}\\src",
+                "-I${workspaceFolder}/dependencies/glad/include",
+                "-I${workspaceFolder}/dependencies/glfw/include",
+                
+                // library paths
+                "-L${workspaceFolder}/dependencies/glfw/lib-vc2019",
+                
+                // src paths
+                "${workspaceFolder}\\src\\*.cpp",
+                "${workspaceFolder}/src/glad.c",
+
+                // libraries
+                "${workspaceFolder}\\dependencies\\glfw\\lib-vc2019\\glfw3.dll",
+
+                "-o",
+                "${workspaceFolder}\\main.exe"
+                
+            ],
+            "options": {
+                // "cwd": "C:\\Program Files\\mingw-w64\\x86_64-8.1.0-posix-seh-rt_v6-rev0\\mingw64\\bin"
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        }
+    ]
+}
