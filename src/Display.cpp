@@ -56,7 +56,6 @@ int Display::init()
     glValidateProgram(shader_program);
     glUseProgram(shader_program);
 
-
     return 0;
 }
 
@@ -114,6 +113,10 @@ static Shader getShader(const string &filepath)
             else if (line.find("fragment") != string::npos)
             {
                 shader_type = GL_FRAGMENT_SHADER;
+            }
+            else if (line.find("compute") != string::npos)
+            {
+                shader_type = GL_COMPUTE_SHADER;
             }
         }
         else
