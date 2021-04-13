@@ -49,6 +49,13 @@ int Display::init()
     }
 
     // load shaders
+    compute_program = glCreateProgram();
+    createShader(compute_program, "res/shaders/compute.shader");
+    glLinkProgram(compute_program);
+    glValidateProgram(compute_program);
+    glUseProgram(compute_program);
+
+    // load shaders
     shader_program = glCreateProgram();
     createShader(shader_program, "res/shaders/vertex.shader");
     createShader(shader_program, "res/shaders/fragment.shader");

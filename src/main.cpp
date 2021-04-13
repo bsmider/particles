@@ -30,37 +30,37 @@ struct Slime
     Vec2 position;
     Vec2 velocity;
     Vec4 color;
-    float size = 0.002f;
     Slime(Vec2 position, Vec2 velocity, Vec4 color) : position(position), velocity(velocity), color(color) {}
     Slime() {}
-    array<Vertex, 4> vertices()
-    {
-        Vertex bot_left;
-        bot_left.position = {position.x, position.y};
-        bot_left.color = color;
+    // array<Vertex, 4> vertices()
+    // {
+    //     Vertex bot_left;
+    //     bot_left.position = {position.x, position.y};
+    //     bot_left.color = color;
 
-        Vertex bot_right;
-        bot_right.position = {position.x + size, position.y};
-        bot_right.color = color;
+    //     Vertex bot_right;
+    //     bot_right.position = {position.x + size, position.y};
+    //     bot_right.color = color;
 
-        Vertex top_left;
-        top_left.position = {position.x, position.y + size};
-        top_left.color = color;
+    //     Vertex top_left;
+    //     top_left.position = {position.x, position.y + size};
+    //     top_left.color = color;
 
-        Vertex top_right;
-        top_right.position = {position.x + size, position.y + size};
-        top_right.color = color;
+    //     Vertex top_right;
+    //     top_right.position = {position.x + size, position.y + size};
+    //     top_right.color = color;
 
-        return {
-            bot_left,
-            bot_right,
-            top_left,
-            top_right};
-    }
+    //     return {
+    //         bot_left,
+    //         bot_right,
+    //         top_left,
+    //         top_right};
+    // }
 };
 
-const int num_slimes = 100000;
-array<Slime, num_slimes> slimes;
+const int num_slimes = 1000000;
+// array<Slime, num_slimes> slimes;
+Slime slimes[num_slimes];
 uint32_t VAO, VBO, instanceVBO;
 Vertex vertices[num_slimes * 4];
 // uint32_t indices[num_slimes * 6];
@@ -68,8 +68,12 @@ uint32_t indices[6];
 
 Vec2 slime_positions[num_slimes];
 
+int WORK_GROUP_SIZE = 256;
+
 int main()
 {
+
+    float size = 0.002f;
     display = new Display(800, 800);
 
     glEnable(GL_BLEND);
@@ -85,7 +89,7 @@ int main()
         float g = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
         float b = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
         float a = 0.5f + static_cast<float>(rand()) / static_cast<float>(RAND_MAX / (1.0f - 0.5f));
-        slimes[i] = Slime({x, y}, {vx, vy}, {r, g, b, 0.5f});
+        slimes[i] = Slime({x, y}, {vx, vy}, {0.0f, g, 0.5f, 0.5f});
         slime_positions[i] = {x, y};
         // auto temp = slimes[i].vertices();
         // memcpy(vertices + temp.size() * i, temp.data(), temp.size() * sizeof(Vertex));
@@ -101,7 +105,7 @@ int main()
     glCreateBuffers(1, &instanceVBO);
     glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
     // glBufferData(GL_ARRAY_BUFFER, sizeof(slime_positions), &slime_positions[0], GL_STATIC_DRAW);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(slimes), &slimes[0], GL_DYNAMIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(slimes), slimes, GL_DYNAMIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     // uint32_t VAO;
@@ -144,12 +148,19 @@ int main()
     //     slime.size, -slime.size, 1.0f, 0.0f, 0.0f, 0.5f,
     //     -slime.size, -slime.size, 1.0f, 0.0f, 0.0f, 0.5f,
     //     slime.size, slime.size, 1.0f, 0.0f, 0.0f, 0.5f};
+    // float quadVertices[] = {
+    //     // positions     // colors
+    //     -slime.size, slime.size,
+    //     slime.size, -slime.size,
+    //     -slime.size, -slime.size,
+    //     slime.size, slime.size};
+
     float quadVertices[] = {
         // positions     // colors
-        -slime.size, slime.size,
-        slime.size, -slime.size,
-        -slime.size, -slime.size,
-        slime.size, slime.size};
+        -size, size,
+        size, -size,
+        -size, -size,
+        size, size};
 
     indices[0] = 0;
     indices[1] = 1;
@@ -217,6 +228,136 @@ int main()
     // glBindBuffer(GL_ARRAY_BUFFER, VBO);
     // glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
 
+    glUseProgram(display->compute_program);
+
+    int num_slimes_location = glGetUniformLocation(display->compute_program, "num_slimes");
+    glUniform1ui(num_slimes_location, num_slimes);
+
+    // uint32_t CS_SB;
+    // glCreateBuffers(1, &CS_SB);
+    // glBindBuffer(GL_SHADER_STORAGE_BUFFER, CS_SB);
+    // glBufferData(GL_SHADER_STORAGE_BUFFER, 3 * sizeof(Vec4), nullptr, GL_DYNAMIC_DRAW);
+
+    // GLint bufMask = GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT; // invalidate makes a ig difference when re-writting
+
+    // Vec4 *coul;
+    // coul = (Vec4 *)glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, 3 * sizeof(Vec4), bufMask);
+
+    Vec2 v1;
+    v1.x = 1.0f;
+    v1.y = 0.0f;
+    // v1.z = 0.0f;
+    // v1.w = 0.0f;
+
+    Vec2 v2;
+    v2.x = 4.0f;
+    v2.y = 0.0f;
+    // v2.z = 0.0f;
+    // v2.w = 0.0f;
+
+    Vec2 v3;
+    v3.x = 2.0f;
+    v3.y = 0.0f;
+    // v3.z = 1.0f;
+    // v3.w = 0.0f;
+
+    // Vec2 slimes[3] = {
+    //     v1, v2, v3};
+
+    // uint32_t CS_SB;
+    // glCreateBuffers(1, &CS_SB);
+    // glBindBuffer(GL_SHADER_STORAGE_BUFFER, CS_SB);
+    // glBufferData(GL_SHADER_STORAGE_BUFFER, 3 * sizeof(Vec2), coul, GL_DYNAMIC_DRAW);
+
+    // GLint bufMask = GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT; // invalidate makes a ig difference when re-writting
+    // // coul = (Vec4 *)glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, 3 * sizeof(Vec4), bufMask);
+
+    // uint32_t CS_SB;
+    // glCreateBuffers(1, &CS_SB);
+    // glBindBuffer(GL_SHADER_STORAGE_BUFFER, CS_SB);
+    // glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(slimes), slimes, GL_DYNAMIC_DRAW);
+
+    // GLint bufMask = GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT; // invalidate makes a ig difference when re-writting
+
+    // glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, CS_SB);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, instanceVBO);
+    // coul[0].x = 1.0f;
+    // coul[0].y = 0.0f;
+    // coul[0].z = 0.0f;
+    // coul[0].w = 0.0f;
+
+    // coul[1].x = 4.0f;
+    // coul[1].y = 0.0f;
+    // coul[1].z = 0.0f;
+    // coul[1].w = 0.0f;
+
+    // coul[2].x = 2.0f;
+    // coul[2].y = 0.0f;
+    // coul[2].z = 0.0f;
+    // coul[2].w = 0.0f;
+
+    // glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+
+    // std::cout << sizeof(slimes) << endl;
+    // std::cout << "compute test" << endl;
+    // // std::cout << slimes[0].x << " " << slimes[0].y << " " << endl;
+    // // std::cout << slimes[1].x << " " << slimes[1].y << " " << endl;
+    // // std::cout << slimes[2].x << " " << slimes[2].y << " " << endl;
+
+    // std::cout << slimes[0].position.x << " " << slimes[0].position.y << " " << endl;
+    // std::cout << slimes[1].position.x << " " << slimes[1].position.y << " " << endl;
+    // std::cout << slimes[2].position.x << " " << slimes[2].position.y << " " << endl;
+
+    // std::cout << "computing" << endl;
+    // glDispatchCompute(3, 1, 1);
+    // // glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT | GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT);
+    // // glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+    // glMemoryBarrier(GL_BUFFER_UPDATE_BARRIER_BIT);
+    // // coul = (Vec4 *)glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, 3 * sizeof(Vec4), bufMask);
+    // // memcpy(0, coul, 3 * sizeof(Vec4));
+    // // glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(slimes), slimes);
+    // // Slime* slimes;
+    // Slime *rslimes = (Slime *)glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_WRITE);
+    // memcpy(slimes, rslimes, num_slimes * sizeof(slime));
+    // glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+
+    // // memcpy(coul, , sizeof(coul));
+
+    // // memcpy(vertices + temp.size() * i, temp.data(), temp.size() * sizeof(Vertex));
+    // // std::cout << slimes[0].x << " " << slimes[0].y << " " << endl;
+    // // std::cout << slimes[1].x << " " << slimes[1].y << " " << endl;
+    // // std::cout << slimes[2].x << " " << slimes[2].y << " " << endl;
+
+    // std::cout << slimes[0].position.x << " " << slimes[0].position.y << " " << endl;
+    // std::cout << slimes[1].position.x << " " << slimes[1].position.y << " " << endl;
+    // std::cout << slimes[2].position.x << " " << slimes[2].position.y << " " << endl;
+
+    // // std::cout << rslimes[0].position.x << " " << rslimes[0].position.y << " " << endl;
+    // // std::cout << rslimes[1].position.x << " " << rslimes[1].position.y << " " << endl;
+    // // std::cout << rslimes[2].position.x << " " << rslimes[2].position.y << " " << endl;
+
+    // std::cout << "computing" << endl;
+    // glDispatchCompute(3, 1, 1);
+    // // glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT | GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT);
+    // // glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+    // glMemoryBarrier(GL_BUFFER_UPDATE_BARRIER_BIT);
+    // // coul = (Vec4 *)glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, 3 * sizeof(Vec4), bufMask);
+    // // memcpy(0, coul, 3 * sizeof(Vec4));
+    // // glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(slimes), slimes);
+    // rslimes = (Slime *)glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_WRITE);
+    // // memcpy(slimes, rslimes, sizeof(rslimes));
+    // memcpy(slimes, rslimes, num_slimes * sizeof(slime));
+    // // std::cout << rslimes[0].position.x << " " << rslimes[0].position.y << " " << endl;
+    // glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+    // // memcpy(vertices + temp.size() * i, temp.data(), temp.size() * sizeof(Vertex));
+    // std::cout << slimes[0].position.x << " " << slimes[0].position.y << " " << endl;
+    // std::cout << slimes[1].position.x << " " << slimes[1].position.y << " " << endl;
+    // std::cout << slimes[2].position.x << " " << slimes[2].position.y << " " << endl;
+
+    // // std::cout << rslimes[0].position.x << " " << rslimes[0].position.y << " " << endl;
+    // // std::cout << rslimes[1].position.x << " " << rslimes[1].position.y << " " << endl;
+    // // std::cout << rslimes[2].position.x << " " << rslimes[2].position.y << " " << endl;
+
     update();
 
     glDeleteProgram(display->shader_program);
@@ -253,26 +394,56 @@ void update()
 
         glClear(GL_COLOR_BUFFER_BIT);
 
-        // Vertex vertices[slimes.size() * 4];
-        for (int i = 0; i < slimes.size(); i++)
-        {
-            if (slimes[i].position.x <= -1.0f || slimes[i].position.x >= 1.0f)
-            {
-                slimes[i].velocity.x = -1.0f * slimes[i].velocity.x;
-            }
-            if (slimes[i].position.y <= -1.0f || slimes[i].position.y >= 1.0f)
-            {
-                slimes[i].velocity.y = -1.0f * slimes[i].velocity.y;
-            }
-            slimes[i].position = {slimes[i].position.x + slimes[i].velocity.x, slimes[i].position.y + slimes[i].velocity.y};
-            // auto temp = slimes[i].vertices();
-            // memcpy(vertices + temp.size() * i, temp.data(), temp.size() * sizeof(Vertex));
-        }
+        // // Vertex vertices[slimes.size() * 4];
+        // for (int i = 0; i < num_slimes; i++)
+        // {
+        // if (slimes[i].position.x <= -1.0f || slimes[i].position.x >= 1.0f)
+        // {
+        //     slimes[i].velocity.x = -1.0f * slimes[i].velocity.x;
+        // }
+        // if (slimes[i].position.y <= -1.0f || slimes[i].position.y >= 1.0f)
+        // {
+        //     slimes[i].velocity.y = -1.0f * slimes[i].velocity.y;
+        // }
+        //     slimes[i].position = {slimes[i].position.x + slimes[i].velocity.x, slimes[i].position.y + slimes[i].velocity.y};
+        //     // auto temp = slimes[i].vertices();
+        //     // memcpy(vertices + temp.size() * i, temp.data(), temp.size() * sizeof(Vertex));
+        // }
+
+        glUseProgram(display->compute_program);
+
+        double xpos, ypos;
+        //getting cursor position
+        glfwGetCursorPos(display->window, &xpos, &ypos);
+        float mouseX = (float)(xpos - display->SCREEN_WIDTH / 2) / (display->SCREEN_WIDTH / 2);
+        float mouseY = (float)-1 * (ypos - display->SCREEN_HEIGHT / 2) / (display->SCREEN_HEIGHT / 2);
+        // cout << "Cursor Position at (" << mouseX << " : " << mouseY << endl;
+
+        Vec2 mouse;
+        mouse.x = mouseX;
+        mouse.y = mouseY;
+
+        int mouseX_location = glGetUniformLocation(display->compute_program, "mouseX");
+        glUniform1f(mouseX_location, mouseX);
+        int mouseY_location = glGetUniformLocation(display->compute_program, "mouseY");
+        glUniform1f(mouseY_location, mouseY);
+
+        // int mouse_location = glGetUniformLocation(display->compute_program, "mouse_location");
+        // // glUniform1ui(num_slimes_location, num_slimes);
+        // glUniform2fv(mouse_location, sizeof(mouse), reinterpret_cast<GLfloat *>(&mouse));
+
+        glDispatchCompute(num_slimes / WORK_GROUP_SIZE + 1, 1, 1);
+        glMemoryBarrier(GL_BUFFER_UPDATE_BARRIER_BIT);
+        // Slime *rslimes = (Slime *)glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_WRITE);
+        // memcpy(slimes, rslimes, num_slimes * sizeof(Slime));
+        glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+
         // glBindBuffer(GL_ARRAY_BUFFER, VBO);
         // glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
+        glUseProgram(display->shader_program);
         glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
         // glBufferData(GL_ARRAY_BUFFER, sizeof(slimes), &slimes[0], GL_DYNAMIC_DRAW);
-        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(slimes), &slimes[0]);
+        // glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(slimes), &slimes[0]);
 
         glBindVertexArray(VAO);
         // glDrawArraysInstanced(GL_TRIANGLES, 0, 6, num_slimes * 2);
