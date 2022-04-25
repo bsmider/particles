@@ -1,2 +1,1 @@
-# physarum
-physarum simulation
+# particles
